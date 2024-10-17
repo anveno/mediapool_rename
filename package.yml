@@ -1,0 +1,8 @@
+package: mediapool_rename
+version: '1.0.0'
+author: 'explorit* new media'
+
+requires:
+    packages:
+        mediapool: '>=2.3.0'
+    redaxo: ^5.2.0

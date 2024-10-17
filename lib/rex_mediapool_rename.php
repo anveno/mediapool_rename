@@ -119,9 +119,26 @@ class rex_mediapool_rename
 						        	//$update = "UPDATE ".$table." SET `".$field."` = REPLACE(`".$field."`, '".$oldFile."', '".$newFile."');";
 						        	//$update = "UPDATE ".$table." SET `".$field."` = trim(REPLACE(concat(' ',`".$field."`,' '),' ".$oldFile." ',' ".$newFile." '));";
 						        	// ----- took a while to find the finally fitting query ;o)
-						        	$update = "UPDATE ".$table." SET `".$field."` = CASE WHEN `".$field."` REGEXP '[[:<:]]".$oldFile."[[:>:]]' THEN REPLACE(`".$field."`,'".$oldFile."','".$newFile."') END WHERE `".$field."` REGEXP '[[:<:]]".$oldFile."[[:>:]]';";
-						        	$updateSql = rex_sql::factory();
-						        	$updateSql->setQuery($update);
+
+								// FIX 2024-10-17 REXEXP mit [[:<:]] doesnt work in Mysql 8
+								// old:
+								//$update = "UPDATE ".$table." SET `".$field."` = CASE WHEN `".$field."` REGEXP '[[:<:]]".$oldFile."[[:>:]]' THEN REPLACE(`".$field."`,'".$oldFile."','".$newFile."') END WHERE `".$field."` REGEXP '[[:<:]]".$oldFile."[[:>:]]';";
+						        	//$updateSql = rex_sql::factory();
+						        	//$updateSql->setQuery($update);
+								// fixed:
+								$update = "UPDATE ".$table."
+										SET `".$field."` = CASE 
+										 WHEN CONVERT(`".$field."` USING utf8mb4) REGEXP '\\\\b".$oldFile."\\\\b' 
+										 THEN REPLACE(`".$field."`, '".$oldFile."', '".$newFile."') 
+									    END 
+									    WHERE CONVERT(`".$field."` USING utf8mb4) REGEXP '\\\\b".$oldFile."\\\\b';";
+							    	$updateSql = rex_sql::factory();
+							    	// update mit try/catch
+							    	try {
+									$updateSql->setQuery($update);
+							    	} catch (rex_sql_exception $e) {
+									echo rex_view::warning($e->getMessage());
+							    	}
 
 						        }
 						    }
